@@ -1,4 +1,5 @@
 from django.db import models
+from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
 
@@ -9,11 +10,21 @@ validate_password = MinLengthValidator(8)
 
 class User(models.Model):
     name = models.CharField(max_length=50)
-    last_login = models.DateTimeField(blank=True)
+    last_login = models.DateTimeField(null=True)
     email = models.EmailField()
     password = models.CharField(
         max_length=50, validators=[validate_password]
     )
+
+    def __str__(self):
+        return self.name or f'User {self.id}'
+
+
+class UserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        widgets = { 'password': forms.PasswordInput(render_value=True) }
+        fields = ['name', 'email', 'password']
 
 
 def validate_level(value):
@@ -37,3 +48,6 @@ class Event(models.Model):
     details = models.TextField()
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     archived = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'Event {self.id} - {self.source}'
