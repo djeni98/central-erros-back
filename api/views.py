@@ -5,8 +5,8 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
-from api.models import User
-from api.serializers import UserModelSerializer
+from api.models import User, Event
+from api.serializers import UserModelSerializer, EventModelSerializer
 
 
 class UserAPIViewSet(viewsets.ModelViewSet):
@@ -40,3 +40,8 @@ class UserAPIViewSet(viewsets.ModelViewSet):
         del result['password']
 
         return Response(result)
+
+
+class EventAPIViewSet(viewsets.ModelViewSet):
+    queryset = Event.objects.all()
+    serializer_class = EventModelSerializer
