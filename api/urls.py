@@ -1,7 +1,11 @@
 from django.urls import include, path
+
+from rest_framework import routers
 from api import views
 
+router = routers.DefaultRouter()
+router.register(r'users', views.UserAPIViewSet)
+
 urlpatterns = [
-    # path('', include(router.urls))
-    # path('lambda/', views.lambda_function)
+    path('', include(router.urls))
 ]

@@ -12,18 +12,18 @@ class User(models.Model):
     name = models.CharField(max_length=50)
     last_login = models.DateTimeField(null=True)
     email = models.EmailField()
-    password = models.CharField(
-        max_length=50, validators=[validate_password]
-    )
+    # Password validation is made in view
+    password = models.CharField(max_length=128)
 
     def __str__(self):
         return self.name or f'User {self.id}'
 
 
 class UserForm(forms.ModelForm):
+    password = forms.CharField(disabled=True)
+
     class Meta:
         model = User
-        widgets = { 'password': forms.PasswordInput(render_value=True) }
         fields = ['name', 'email', 'password']
 
 
