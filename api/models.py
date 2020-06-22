@@ -1,5 +1,4 @@
 from django.db import models
-from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
 
@@ -17,14 +16,6 @@ class User(models.Model):
 
     def __str__(self):
         return self.name or f'User {self.id}'
-
-
-class UserForm(forms.ModelForm):
-    password = forms.CharField(disabled=True)
-
-    class Meta:
-        model = User
-        fields = ['name', 'email', 'password']
 
 
 def validate_level(value):
