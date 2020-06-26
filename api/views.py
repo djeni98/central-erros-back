@@ -12,34 +12,42 @@ from api.serializers import UserModelSerializer, EventModelSerializer
 class UserAPIViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserModelSerializer
-    fields = 'id', 'name', 'email', 'last_login'
 
-    def list(self, request):
-        users = User.objects.values(*self.fields)
-        return Response(users)
+    def create_password(self, password):
+        validate_password(password)
+        return hashers.make_password(password)
 
     def create(self, request):
         user = request.data.dict()
-        last_login = request.data.get('last_login')
-        user['last_login'] = last_login if last_login else None
-
-        password = request.data.get('password', '')
-        validate_password(password)
-        user['password'] = hashers.make_password(password)
+        user['last_login'] = None
+        user['password'] = self.create_password(user.get('password'))
 
         serializer = UserModelSerializer(data=user)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def retrieve(self, request, pk=None):
-        user = get_object_or_404(User, pk=pk)
-        serializer = UserModelSerializer(user)
-        result = serializer.data
-        del result['password']
+    # https://github.com/encode/django-rest-framework/.../mixins.py#L59
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = request.data
 
-        return Response(result)
+        password = user.get('password')
+        if password:
+            user['password'] = self.create_password(password)
+
+        serializer = UserModelSerializer(
+            instance, data=user, partial=True
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
 
 class EventAPIViewSet(viewsets.ModelViewSet):

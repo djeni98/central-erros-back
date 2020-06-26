@@ -2,20 +2,24 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
 
+from django.contrib.auth.base_user import AbstractBaseUser
+
 LEVELS = ['CRITICAL', 'DEBUG', 'ERROR', 'WARNING', 'INFO']
 
 validate_password = MinLengthValidator(8)
 
 
-class User(models.Model):
-    name = models.CharField(max_length=50)
-    last_login = models.DateTimeField(null=True)
-    email = models.EmailField()
-    # Password validation is made in view
-    password = models.CharField(max_length=128)
+class User(AbstractBaseUser):
+    name = models.CharField(max_length=300, blank=True)
+    email = models.EmailField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    EMAIL_FIELD = 'email'
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['email']
 
     def __str__(self):
-        return self.name or f'User {self.id}'
+        return self.name or self.email
 
 
 def validate_level(value):

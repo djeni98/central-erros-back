@@ -1,31 +1,7 @@
 from django.contrib import admin
 
-from django import forms
-from django.contrib.auth.forms import ReadOnlyPasswordHashField
-
 from api.models import User, Event
-
-class UserChangeForm(forms.ModelForm):
-    password = ReadOnlyPasswordHashField(
-        label='Password',
-        help_text=(
-            'Raw passwords are not stored, so there is no way to see this '
-            'user’s password, but you can change the password using '
-            'this form.'
-            # '<a href="../password/">this form</a>.'
-        )
-    )
-
-    class Meta:
-        model = User
-        fields = ['name', 'email', 'password']
-
-
-class UserCreateForm(forms.ModelForm):
-    class Meta:
-        model = User
-        widgets = { 'password': forms.PasswordInput() }
-        fields = ['name', 'email', 'password']
+from api.forms import UserChangeForm, UserCreateForm
 
 
 class UserModelAdmin(admin.ModelAdmin):
@@ -33,6 +9,7 @@ class UserModelAdmin(admin.ModelAdmin):
         kwargs['form'] = UserChangeForm if obj else UserCreateForm
         return super().get_form(request, obj, **kwargs)
 
+    readonly_fields = ('created_at', 'last_login')
     list_display = ('name', 'email', 'last_login')
 
 
