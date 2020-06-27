@@ -67,7 +67,7 @@ class Event(models.Model):
 
     @property
     def collected_by(self):
-        return self.user.name or self.user.email
+        return str(self.user) if self.user else None
 
     def __str__(self):
         return f'Event {self.id} - {self.source}'
