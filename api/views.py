@@ -5,9 +5,10 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
-from api.models import User, Event
-from api.serializers import UserModelSerializer, EventModelSerializer
-
+from api.models import User, Event, Agent
+from api.serializers import (
+    UserModelSerializer, EventModelSerializer, AgentModelSerializer
+)
 
 class UserAPIViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -53,3 +54,7 @@ class UserAPIViewSet(viewsets.ModelViewSet):
 class EventAPIViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventModelSerializer
+
+class AgentAPIViewSet(viewsets.ModelViewSet):
+    queryset = Agent.objects.all()
+    serializer_class = AgentModelSerializer
