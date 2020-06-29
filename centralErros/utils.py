@@ -6,7 +6,7 @@ def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
     if response is None:
-        data = { 'details': exc }
+        data = { 'details': repr(exc) }
         response = Response(data, status=status.HTTP_400_BAD_REQUEST)
         return response
 
