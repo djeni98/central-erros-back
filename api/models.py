@@ -1,22 +1,11 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.contrib.auth.base_user import AbstractBaseUser
 
 LEVELS = ['CRITICAL', 'DEBUG', 'ERROR', 'WARNING', 'INFO']
 ENVIRONMENTS=['development', 'testing', 'production']
 
-
-class User(AbstractBaseUser):
-    name = models.CharField(max_length=300, blank=True)
-    email = models.EmailField(unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    EMAIL_FIELD = 'email'
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['email']
-
-    def __str__(self):
-        return self.name or self.email
+User = get_user_model()
 
 
 def validate_environment(value):

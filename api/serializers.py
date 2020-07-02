@@ -6,6 +6,7 @@ from api.models import User, Event, Agent
 
 
 class UserModelSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
     password = serializers.CharField(
         validators=[validate_password],
         style={'input_type': 'password'}
@@ -14,7 +15,7 @@ class UserModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = '__all__'
-        read_only_fields = ['created_at', 'last_login']
+        read_only_fields = ['last_login']
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)

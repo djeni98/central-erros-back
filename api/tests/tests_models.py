@@ -7,7 +7,7 @@ class ModelsTestCase(TestCase):
     def create_user(self, name):
         password = f'senha{name}'
         user = User.objects.create(
-            name=name, email=f'{name}@email.com', password=password
+            username=name, email=f'{name}@email.com', password=password
         )
         user.set_password(password)
         user.save()
@@ -19,10 +19,7 @@ class ModelsTestCase(TestCase):
         carla = self.create_user('carla')
         denis = self.create_user('denis')
         lucas = self.create_user('lucas')
-
-        maria = User.objects.create(email='maria@email.com')
-        maria.set_password('maria')
-        maria.save()
+        maria = self.create_user('maria')
 
         # Agents
         localhost = Agent.objects.create(
@@ -91,14 +88,14 @@ class ModelsTestCase(TestCase):
         for source, event in events:
             self.assertEqual(source, event.source)
 
-    def test_events_collectedBy_returns_user_name_or_email(self):
+    def test_events_collectedBy_returns_user_or_none(self):
         events = [
             (None, Event.objects.get(level='INFO')),
             ('lucas', Event.objects.get(level='WARNING')),
             ('carla', Event.objects.get(level='DEBUG')),
-            ('maria@email.com', Event.objects.get(level='ERROR')),
+            ('maria', Event.objects.get(level='ERROR')),
             (None, Event.objects.get(level='CRITICAL')),
         ]
 
-        for user, event in events:
-            self.assertEqual(user, event.collected_by)
+        for username, event in events:
+            self.assertEqual(username, event.collected_by)

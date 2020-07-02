@@ -11,9 +11,11 @@ from api.models import User
 
 class UserRouteCase(TestCase):
     valid_name = 'denis'
+    valid_username = 'denis'
     valid_email = 'denis@email.com'
     valid_password = 'MYPASSWORD_myp455w0rd'
 
+    invalid_username = 'denis' + 'd' * 150
     invalid_email = 'denisemail'
     invalid_password = '1234567890'
 
@@ -29,7 +31,7 @@ class UserRouteCase(TestCase):
         self.client = APIClient()
         self.user_list = []
         for i in range(10):
-            user = User.objects.create(email=f'user{i+1}@email.com')
+            user = User.objects.create(username=f'user{i+1}', email=f'user{i+1}@email.com')
             user.set_password('mypassword')
             user.save()
             self.user_list.append(user)
@@ -41,36 +43,42 @@ class UserRouteCase(TestCase):
         for i, user in enumerate(users):
             expected_user = self.user_list[i]
             self.assertEqual(expected_user.email, user.get('email'))
+            self.assertEqual(expected_user.username, user.get('username'))
 
     def test_create_user(self):
-        data = {'name': self.valid_name}
+        data = {'first_name': self.valid_name}
         response = self.client.post('/api/users/', data=data, format='json')
 
-        with self.subTest('Email and password must be required', response=response):
+        with self.subTest('Username, email and password must be required', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
             self.assertIn('email', body)
             self.assertIn('password', body)
+            self.assertIn('username', body)
+            self.assertSubstringIn('required', body.get('username'))
             self.assertSubstringIn('required', body.get('email'))
             self.assertSubstringIn('required', body.get('password'))
 
         data = {
-            'name': self.valid_name,
+            'username': self.invalid_username,
             'email': self.invalid_email,
             'password': self.invalid_password
         }
         response = self.client.post('/api/users/', data=data, format='json')
 
-        with self.subTest('Email and password must be valid', response=response):
+        with self.subTest('Username, email and password must be valid', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
             self.assertIn('email', body)
             self.assertIn('password', body)
+            self.assertIn('username', body)
+            self.assertSubstringIn('Ensure', body.get('username'))
             self.assertSubstringIn('valid', body.get('email'))
             self.assertSubstringIn('common', body.get('password'))
             self.assertSubstringIn('numeric', body.get('password'))
 
         data = {
+            'username': self.valid_username,
             'email': self.valid_email,
             'password': self.valid_password
         }
@@ -79,8 +87,9 @@ class UserRouteCase(TestCase):
         with self.subTest('User must be created', response=response):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             user = response.json()
-            self.assertIn('created_at', user)
+            self.assertIn('date_joined', user)
             self.assertEqual(data.get('email'), user.get('email'))
+            self.assertEqual(data.get('username'), user.get('username'))
             self.assertIsNone(user.get('last_login'))
 
             expected_users = len(self.user_list) + 1
@@ -105,6 +114,7 @@ class UserRouteCase(TestCase):
             self.assertEqual(pk, user.get('id'))
             self.assertEqual(expected_user.id, user.get('id'))
             self.assertEqual(expected_user.email, user.get('email'))
+            self.assertEqual(expected_user.username, user.get('username'))
 
     def test_update_user(self):
         pk = len(self.user_list) + 5
@@ -117,38 +127,42 @@ class UserRouteCase(TestCase):
             self.assertIn('not found', response.json().get('detail').lower())
 
         pk = 5
-        data = {'name': self.valid_name}
+        data = {'first_name': self.valid_name}
         response = self.client.put(f'/api/users/{pk}/', data=data, format='json')
 
-        with self.subTest('Email and password must be required', response=response):
+        with self.subTest('Username, email and password must be required', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
             self.assertIn('email', body)
             self.assertIn('password', body)
+            self.assertIn('username', body)
+            self.assertSubstringIn('required', body.get('username'))
             self.assertSubstringIn('required', body.get('email'))
             self.assertSubstringIn('required', body.get('password'))
 
         data = {
-            'name': self.valid_name,
+            'username': self.invalid_username,
             'email': self.invalid_email,
-            'password': self.invalid_password,
-            'last_login': datetime.now(timezone(timedelta(hours=-3)))
+            'password': self.invalid_password
         }
         response = self.client.put(f'/api/users/{pk}/', data=data, format='json')
 
-        with self.subTest('Email and password must be valid', response=response):
+        with self.subTest('Username, email and password must be valid', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
             self.assertIn('email', body)
             self.assertIn('password', body)
+            self.assertIn('username', body)
+            self.assertSubstringIn('Ensure', body.get('username'))
             self.assertSubstringIn('valid', body.get('email'))
             self.assertSubstringIn('common', body.get('password'))
             self.assertSubstringIn('numeric', body.get('password'))
 
         data = {
-            'name': self.valid_name,
+            'username': self.valid_username,
             'email': self.valid_email,
-            'password': self.valid_password
+            'password': self.valid_password,
+            'last_login': datetime.now(timezone(timedelta(hours=-3)))
         }
         response = self.client.put(f'/api/users/{pk}/', data=data, format='json')
 
@@ -158,10 +172,10 @@ class UserRouteCase(TestCase):
             expected_user = self.user_list[pk-1]
             self.assertEqual(pk, user.get('id'))
             self.assertEqual(expected_user.id, user.get('id'))
-            self.assertEqual(data.get('name'), user.get('name'))
             self.assertEqual(data.get('email'), user.get('email'))
-            self.assertNotEqual(expected_user.name, user.get('name'))
+            self.assertEqual(data.get('username'), user.get('username'))
             self.assertNotEqual(expected_user.email, user.get('email'))
+            self.assertNotEqual(expected_user.username, user.get('username'))
             self.assertEqual(expected_user.last_login, user.get('last_login'))
 
     def test_partial_update_user(self):
@@ -175,6 +189,15 @@ class UserRouteCase(TestCase):
             self.assertIn('not found', response.json().get('detail').lower())
 
         pk = 5
+        data = {'username': self.invalid_username}
+        response = self.client.patch(f'/api/users/{pk}/', data=data, format='json')
+
+        with self.subTest('Username must be valid', response=response):
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            body = response.json()
+            self.assertIn('username', body)
+            self.assertSubstringIn('Ensure', body.get('username'))
+
         data = {'email': self.invalid_email}
         response = self.client.patch(f'/api/users/{pk}/', data=data, format='json')
 
@@ -206,7 +229,7 @@ class UserRouteCase(TestCase):
             self.assertEqual(expected_user.last_login, user.get('last_login'))
             self.assertNotEqual(data.get('last_login'), user.get('last_login'))
 
-        data = {'name': self.valid_name}
+        data = {'first_name': self.valid_name}
         response = self.client.patch(f'/api/users/{pk}/', data=data, format='json')
 
         with self.subTest('User must be partial updated', response=response):
@@ -215,8 +238,8 @@ class UserRouteCase(TestCase):
             expected_user = self.user_list[pk-1]
             self.assertEqual(pk, user.get('id'))
             self.assertEqual(expected_user.id, user.get('id'))
-            self.assertEqual(data.get('name'), user.get('name'))
-            self.assertNotEqual(expected_user.name, user.get('name'))
+            self.assertEqual(data.get('first_name'), user.get('first_name'))
+            self.assertNotEqual(expected_user.first_name, user.get('first_name'))
 
     def test_delete_user(self):
         pk = len(self.user_list) + 5
