@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # Terceiros
     'rest_framework',
     # Meus apps
+    'logs',
     'api'
 ]
 

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from datetime import datetime, timezone, timedelta
 
-from api.models import User, Agent, Event
+from logs.models import User, Agent, Event
 
 class ModelsTestCase(TestCase):
     def create_user(self, name):

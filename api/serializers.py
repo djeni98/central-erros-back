@@ -2,7 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 
 from rest_framework import serializers
 
-from api.models import User, Event, Agent
+from logs.models import User, Event, Agent
 
 
 class UserModelSerializer(serializers.ModelSerializer):

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from api.models import Event, Agent
+from logs.models import Event, Agent
 
 
 class EventModelAdmin(admin.ModelAdmin):

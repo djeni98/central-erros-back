@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 
-from api.models import User, Event, Agent
+from logs.models import User, Event, Agent
 from api.serializers import (
     UserModelSerializer, EventModelSerializer, AgentModelSerializer
 )
