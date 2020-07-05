@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from centralErros.secret import SECRET_KEY
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -125,8 +126,19 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# Rest Framework - Handle Exception
-#
+
+# Rest Framework authentication
+# https://www.django-rest-framework.org/api-guide/authentication/
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'centralErros.utils.custom_exception_handler'
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ]
+}
+
+# Simple JWT
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=2)
 }
