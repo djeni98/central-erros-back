@@ -15,5 +15,6 @@ router.register(r'agents', views.AgentAPIViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('login/', custom_token_obtain_pair),
-    path('refresh/', token_refresh)
+    path('refresh/', token_refresh),
+    path('register/', views.register, name='register')
 ]
