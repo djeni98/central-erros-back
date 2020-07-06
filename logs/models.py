@@ -44,15 +44,15 @@ class Event(models.Model):
     )
 
     description = models.TextField()
-    datetime = models.DateTimeField(blank=True)
     details = models.TextField()
-    agent = models.ForeignKey(Agent, on_delete=models.SET_NULL, null=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    datetime = models.DateTimeField(blank=True, null=True)
+    agent = models.ForeignKey(Agent, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     archived = models.BooleanField(default=False)
 
     @property
     def source(self):
-        return self.agent.name
+        return self.agent.name if self.agent else None
 
     @property
     def collected_by(self):
