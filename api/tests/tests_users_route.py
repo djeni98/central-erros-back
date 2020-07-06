@@ -1,5 +1,4 @@
-from django.test import TestCase
-from django.test.testcases import safe_repr
+from api.tests.TestCase import TestCase
 
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -10,26 +9,39 @@ from logs.models import User
 
 
 class UserRouteCase(TestCase):
-    valid_name = 'denis'
-    valid_username = 'denis'
-    valid_email = 'denis@email.com'
-    valid_password = 'MYPASSWORD_myp455w0rd'
+    invalid_user = {
+        'username': 'denis' + 'd' * 150,
+        'email': 'denisemailcom',
+        'password': '1234567890'
+    }
 
-    invalid_username = 'denis' + 'd' * 150
-    invalid_email = 'denisemail'
-    invalid_password = '1234567890'
+    simple_valid_user = {
+        'username': 'denise',
+        'email': 'denise@email.com',
+        'password': 'MYPASSWORD_myp455w0rd',
+    }
+
+    full_valid_user = {
+        'username': 'denis',
+        'email': 'denis@email.com',
+        'password': 'MYPASSWORD_myp455w0rd',
+        'first_name': 'Denis',
+        'last_name': 'Lastname',
+        'is_staff': True,
+        'is_active': True,
+        'is_superuser': True,
+        'groups': [],
+        'user_permissions': []
+    }
+
+    read_only_fields = ['id', 'last_login', 'date_joined']
 
     route = '/api/users/'
 
-    def assertSubstringIn(self, substring, container, msg=None):
-        result = any(substring in item for item in container)
-        if not result:
-            msg = self._formatMessage(
-                msg, f'{substring} is not substring in {safe_repr(container)}'
-            )
-            self.fail(msg)
-
     def setUp(self):
+        self.post_fields = list(self.full_valid_user.keys())
+        self.post_fields.remove('password')
+
         self.client = APIClient()
         self.user_list = []
         for i in range(10):
@@ -43,14 +55,15 @@ class UserRouteCase(TestCase):
         users = response.json()
 
         for i, user in enumerate(users):
+            for field in self.read_only_fields + self.post_fields:
+                self.assertIn(field, user)
+
             expected_user = self.user_list[i]
             self.assertEqual(expected_user.email, user.get('email'))
             self.assertEqual(expected_user.username, user.get('username'))
 
     def test_create_user(self):
-        data = {'first_name': self.valid_name}
-        response = self.client.post(f'{self.route}', data=data, format='json')
-
+        response = self.client.post(f'{self.route}', data={}, format='json')
         with self.subTest('Username, email and password must be required', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
@@ -61,14 +74,8 @@ class UserRouteCase(TestCase):
             self.assertSubstringIn('required', body.get('email'))
             self.assertSubstringIn('required', body.get('password'))
 
-        data = {
-            'username': self.invalid_username,
-            'email': self.invalid_email,
-            'password': self.invalid_password
-        }
-        response = self.client.post(f'{self.route}', data=data, format='json')
-
-        with self.subTest('Username, email and password must be valid', response=response):
+        response = self.client.post(f'{self.route}', data=self.invalid_user, format='json')
+        with self.subTest('User fields must be valid', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
             self.assertIn('email', body)
@@ -79,22 +86,34 @@ class UserRouteCase(TestCase):
             self.assertSubstringIn('common', body.get('password'))
             self.assertSubstringIn('numeric', body.get('password'))
 
-        data = {
-            'username': self.valid_username,
-            'email': self.valid_email,
-            'password': self.valid_password
-        }
+        data = self.simple_valid_user
         response = self.client.post(f'{self.route}', data=data, format='json')
-
-        with self.subTest('User must be created', response=response):
+        with self.subTest('User must be created with only required fields', response=response):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             user = response.json()
-            self.assertIn('date_joined', user)
+            for field in self.read_only_fields + self.post_fields:
+                self.assertIn(field, user)
+
             self.assertEqual(data.get('email'), user.get('email'))
             self.assertEqual(data.get('username'), user.get('username'))
-            self.assertIsNone(user.get('last_login'))
 
             expected_users = len(self.user_list) + 1
+            db_users = User.objects.count()
+            self.assertEqual(expected_users, db_users)
+
+        data = self.full_valid_user
+        response = self.client.post(f'{self.route}', data=data, format='json')
+        with self.subTest('User must be created with all fields', response=response):
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            user = response.json()
+
+            for field in self.read_only_fields:
+                self.assertIn(field, user)
+
+            for field in self.post_fields:
+                self.assertEqual(data.get(field), user.get(field))
+
+            expected_users = len(self.user_list) + 2
             db_users = User.objects.count()
             self.assertEqual(expected_users, db_users)
 
@@ -120,18 +139,14 @@ class UserRouteCase(TestCase):
 
     def test_update_user(self):
         pk = len(self.user_list) + 5
-        data = {}
-        response = self.client.put(f'{self.route}{pk}/', data=data, format='json')
-
+        response = self.client.put(f'{self.route}{pk}/', data={}, format='json')
         with self.subTest('Update must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
             self.assertIn('detail', response.json())
             self.assertIn('not found', response.json().get('detail').lower())
 
         pk = 5
-        data = {'first_name': self.valid_name}
-        response = self.client.put(f'{self.route}{pk}/', data=data, format='json')
-
+        response = self.client.put(f'{self.route}{pk}/', data={}, format='json')
         with self.subTest('Username, email and password must be required', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
@@ -142,13 +157,7 @@ class UserRouteCase(TestCase):
             self.assertSubstringIn('required', body.get('email'))
             self.assertSubstringIn('required', body.get('password'))
 
-        data = {
-            'username': self.invalid_username,
-            'email': self.invalid_email,
-            'password': self.invalid_password
-        }
-        response = self.client.put(f'{self.route}{pk}/', data=data, format='json')
-
+        response = self.client.put(f'{self.route}{pk}/', data=self.invalid_user, format='json')
         with self.subTest('Username, email and password must be valid', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
@@ -160,12 +169,8 @@ class UserRouteCase(TestCase):
             self.assertSubstringIn('common', body.get('password'))
             self.assertSubstringIn('numeric', body.get('password'))
 
-        data = {
-            'username': self.valid_username,
-            'email': self.valid_email,
-            'password': self.valid_password,
-            'last_login': datetime.now(timezone(timedelta(hours=-3)))
-        }
+        data = dict(self.simple_valid_user)
+        data['last_login'] = datetime.now(timezone(timedelta(hours=-3)))
         response = self.client.put(f'{self.route}{pk}/', data=data, format='json')
 
         with self.subTest('User must be updated and last_login must not change', response=response):
@@ -182,36 +187,31 @@ class UserRouteCase(TestCase):
 
     def test_partial_update_user(self):
         pk = len(self.user_list) + 5
-        data = {'email': self.valid_email}
-        response = self.client.patch(f'{self.route}{pk}/', data=data, format='json')
-
+        response = self.client.patch(f'{self.route}{pk}/', data={}, format='json')
         with self.subTest('Update must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
             self.assertIn('detail', response.json())
             self.assertIn('not found', response.json().get('detail').lower())
 
         pk = 5
-        data = {'username': self.invalid_username}
+        data = {'username': self.invalid_user.get('username')}
         response = self.client.patch(f'{self.route}{pk}/', data=data, format='json')
-
         with self.subTest('Username must be valid', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
             self.assertIn('username', body)
             self.assertSubstringIn('Ensure', body.get('username'))
 
-        data = {'email': self.invalid_email}
+        data = {'email': self.invalid_user.get('email')}
         response = self.client.patch(f'{self.route}{pk}/', data=data, format='json')
-
         with self.subTest('Email must be valid', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
             self.assertIn('email', body)
             self.assertSubstringIn('valid', body.get('email'))
 
-        data = {'password': self.invalid_password}
+        data = {'password': self.invalid_user.get('password')}
         response = self.client.patch(f'{self.route}{pk}/', data=data, format='json')
-
         with self.subTest('Password must be valid', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             body = response.json()
@@ -221,7 +221,6 @@ class UserRouteCase(TestCase):
 
         data = {'last_login': datetime.now(timezone(timedelta(hours=-3)))}
         response = self.client.patch(f'{self.route}{pk}/', data=data, format='json')
-
         with self.subTest('Last login must not been changed', response=response):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             user = response.json()
@@ -231,9 +230,8 @@ class UserRouteCase(TestCase):
             self.assertEqual(expected_user.last_login, user.get('last_login'))
             self.assertNotEqual(data.get('last_login'), user.get('last_login'))
 
-        data = {'first_name': self.valid_name}
+        data = {'first_name': self.full_valid_user.get('first_name')}
         response = self.client.patch(f'{self.route}{pk}/', data=data, format='json')
-
         with self.subTest('User must be partial updated', response=response):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             user = response.json()
@@ -246,7 +244,6 @@ class UserRouteCase(TestCase):
     def test_delete_user(self):
         pk = len(self.user_list) + 5
         response = self.client.delete(f'{self.route}{pk}/')
-
         with self.subTest('Delete must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
             self.assertIn('detail', response.json())
@@ -254,7 +251,6 @@ class UserRouteCase(TestCase):
 
         pk = 5
         response = self.client.delete(f'{self.route}{pk}/')
-
         with self.subTest('User must be deleted', response=response):
             self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
             total_users = len(self.user_list) - 1
