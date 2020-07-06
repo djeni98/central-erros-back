@@ -3,11 +3,27 @@ from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from logs.models import User, Event, Agent
+from logs.models import Permission, Group, User, Event, Agent
 from api.serializers import (
+    PermissionModelSerializer, GroupModelSerializer,
     UserModelSerializer, EventModelSerializer, AgentModelSerializer
 )
 from api.serializers import UserCreateSerializer as RegisterSerializer
+
+class PermissionAPIViewSet(viewsets.ModelViewSet):
+    #permission_classes = [IsAuthenticated]
+    #authentication_classes = [JWTAuthentication]
+
+    queryset = Permission.objects.all()
+    serializer_class = PermissionModelSerializer
+
+
+class GroupAPIViewSet(viewsets.ModelViewSet):
+    #permission_classes = [IsAuthenticated]
+    #authentication_classes = [JWTAuthentication]
+
+    queryset = Group.objects.all()
+    serializer_class = GroupModelSerializer
 
 class UserAPIViewSet(viewsets.ModelViewSet):
     #permission_classes = [IsAuthenticated]

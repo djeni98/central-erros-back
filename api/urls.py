@@ -11,6 +11,8 @@ router = routers.DefaultRouter()
 router.register(r'users', views.UserAPIViewSet)
 router.register(r'events', views.EventAPIViewSet)
 router.register(r'agents', views.AgentAPIViewSet)
+router.register(r'groups', views.GroupAPIViewSet)
+router.register(r'permissions', views.PermissionAPIViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

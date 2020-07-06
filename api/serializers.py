@@ -2,7 +2,22 @@ from django.contrib.auth.password_validation import validate_password
 
 from rest_framework import serializers
 
-from logs.models import User, Event, Agent
+from logs.models import Permission, Group, User, Event, Agent
+
+class PermissionModelSerializer(serializers.ModelSerializer):
+    app_labeled_name = serializers.CharField(
+        read_only=True,
+        source='content_type.app_labeled_name'
+    )
+    class Meta:
+        model = Permission
+        fields = '__all__'
+
+
+class GroupModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = '__all__'
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

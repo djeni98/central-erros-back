@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import Permission, Group
 
 LEVELS = ['CRITICAL', 'DEBUG', 'ERROR', 'WARNING', 'INFO']
 ENVIRONMENTS=['development', 'testing', 'production']
