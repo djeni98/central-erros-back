@@ -68,11 +68,12 @@ class UserModelSerializer(UserCreateSerializer):
             if value:
                 getattr(instance, item).set(value)
 
+        if validated_data.get('password'):
+            instance.set_password(validated_data.pop('password'))
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
 
-        if validated_data.get('password'):
-            instance.set_password(validated_data.get('password'))
 
         instance.save()
         return instance

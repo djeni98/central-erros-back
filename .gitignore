@@ -2,3 +2,6 @@ secret.py
 
 __pycache__/
 venv/
+
+*.sqlite3
+*.swp
