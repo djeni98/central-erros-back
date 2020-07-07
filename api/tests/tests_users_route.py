@@ -1,14 +1,14 @@
-from api.tests.TestCase import TestCase
+from api.tests.TestCase import TestCase, PermissionUtilities
 
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from datetime import datetime, timezone, timedelta
 
-from logs.models import User
+from logs.models import User, Permission
 
 
-class UserRouteCase(TestCase):
+class UserRouteCase(TestCase, PermissionUtilities):
     invalid_user = {
         'username': 'denis' + 'd' * 150,
         'email': 'denisemailcom',
@@ -50,19 +50,61 @@ class UserRouteCase(TestCase):
             user.save()
             self.user_list.append(user)
 
+        # Assign permission instead of calling create_users_with_permissions
+        self.permission_users = {}
+        for i, permission in enumerate(['view', 'add', 'change', 'delete']):
+            user = User.objects.get(username=f'user{i+1}')
+            codename = f'{permission}_{User._meta.model_name}' 
+            user.user_permissions.set([Permission.objects.get(codename=codename)])
+            self.permission_users[permission] = {
+                'username': user.username, 'password': 'mypassword'
+            }
+
     def test_list_users(self):
         response = self.client.get(f'{self.route}')
-        users = response.json()
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
 
-        for i, user in enumerate(users):
-            for field in self.read_only_fields + self.post_fields:
-                self.assertIn(field, user)
+        self.login(permission='delete')
+        response = self.client.get(f'{self.route}')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
 
-            expected_user = self.user_list[i]
-            self.assertEqual(expected_user.email, user.get('email'))
-            self.assertEqual(expected_user.username, user.get('username'))
+        self.login(permission='view')
+        response = self.client.get(f'{self.route}')
+        with self.subTest('Must return data and a success code', response=response):
+            users = response.json()
+            for i, user in enumerate(users):
+                for field in self.read_only_fields + self.post_fields:
+                    self.assertIn(field, user)
+
+                expected_user = self.user_list[i]
+                self.assertEqual(expected_user.email, user.get('email'))
+                self.assertEqual(expected_user.username, user.get('username'))
 
     def test_create_user(self):
+        response = self.client.post(f'{self.route}', data={}, format='json')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='delete')
+        response = self.client.post(f'{self.route}', data={}, format='json')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='add')
         response = self.client.post(f'{self.route}', data={}, format='json')
         with self.subTest('Username, email and password must be required', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -119,6 +161,23 @@ class UserRouteCase(TestCase):
 
     def test_list_one_user(self):
         pk = len(self.user_list) + 5
+
+        response = self.client.get(f'{self.route}{pk}/')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='delete')
+        response = self.client.get(f'{self.route}{pk}/')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='view')
         response = self.client.get(f'{self.route}{pk}/')
 
         with self.subTest('List must return not found', response=response):
@@ -139,6 +198,23 @@ class UserRouteCase(TestCase):
 
     def test_update_user(self):
         pk = len(self.user_list) + 5
+
+        response = self.client.put(f'{self.route}{pk}/', data={}, format='json')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='delete')
+        response = self.client.put(f'{self.route}{pk}/', data={}, format='json')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='change')
         response = self.client.put(f'{self.route}{pk}/', data={}, format='json')
         with self.subTest('Update must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -187,6 +263,23 @@ class UserRouteCase(TestCase):
 
     def test_partial_update_user(self):
         pk = len(self.user_list) + 5
+
+        response = self.client.patch(f'{self.route}{pk}/', data={}, format='json')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='delete')
+        response = self.client.patch(f'{self.route}{pk}/', data={}, format='json')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='change')
         response = self.client.patch(f'{self.route}{pk}/', data={}, format='json')
         with self.subTest('Update must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -243,6 +336,23 @@ class UserRouteCase(TestCase):
 
     def test_delete_user(self):
         pk = len(self.user_list) + 5
+
+        response = self.client.delete(f'{self.route}{pk}/')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='add')
+        response = self.client.delete(f'{self.route}{pk}/')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='delete')
         response = self.client.delete(f'{self.route}{pk}/')
         with self.subTest('Delete must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

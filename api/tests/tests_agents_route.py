@@ -1,4 +1,4 @@
-from api.tests.TestCase import TestCase
+from api.tests.TestCase import TestCase, PermissionUtilities
 
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -7,8 +7,7 @@ from datetime import datetime, timezone, timedelta
 
 from logs.models import User, Agent
 
-
-class AgentRouteCase(TestCase):
+class AgentRouteCase(TestCase, PermissionUtilities):
     invalid_agent = {
         'name': 'name' + 'n' * 256,
         'environment': 'invalid_environment'
@@ -30,6 +29,8 @@ class AgentRouteCase(TestCase):
 
     def setUp(self):
         self.client = APIClient()
+        self.create_users_with_permissions(Agent)
+
         self.agents_list = []
         users_list = []
 
@@ -44,15 +45,47 @@ class AgentRouteCase(TestCase):
 
     def test_list_agents(self):
         response = self.client.get(f'{self.route}')
-        agents = response.json()
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
 
-        for i, agent in enumerate(agents):
-            expected_agent = self.agents_list[i]
-            self.assertEqual(expected_agent.name, agent.get('name'))
-            self.assertEqual(expected_agent.environment, agent.get('environment'))
-            self.assertEqual(expected_agent.user_id, agent.get('user'))
+        self.login(permission='delete')
+        response = self.client.get(f'{self.route}')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='view')
+        response = self.client.get(f'{self.route}')
+        with self.subTest('Must return data and a success code', response=response):
+            agents = response.json()
+            for i, agent in enumerate(agents):
+                expected_agent = self.agents_list[i]
+                self.assertEqual(expected_agent.name, agent.get('name'))
+                self.assertEqual(expected_agent.environment, agent.get('environment'))
+                self.assertEqual(expected_agent.user_id, agent.get('user'))
 
     def test_create_agent(self):
+        response = self.client.post(f'{self.route}', data={}, format='json')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='delete')
+        response = self.client.post(f'{self.route}', data={}, format='json')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='add')
         response = self.client.post(f'{self.route}', data={}, format='json')
         with self.subTest('Name and environment must be required', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -99,14 +132,31 @@ class AgentRouteCase(TestCase):
 
     def test_list_one_agent(self):
         pk = len(self.agents_list) + 2
-        response = self.client.get(f'{self.route}{pk}/')
 
+        response = self.client.get(f'{self.route}{pk}/')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='delete')
+        response = self.client.get(f'{self.route}{pk}/')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='view')
+        response = self.client.get(f'{self.route}{pk}/')
         with self.subTest('List must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
             self.assertIn('detail', response.json())
             self.assertIn('not found', response.json().get('detail').lower())
 
         pk = 2
+
         response = self.client.get(f'{self.route}{pk}/')
         with self.subTest('Must return the correct agent', response=response):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -119,6 +169,23 @@ class AgentRouteCase(TestCase):
 
     def test_update_agent(self):
         pk = len(self.agents_list) + 2
+
+        response = self.client.put(f'{self.route}{pk}/', data={}, format='json')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='delete')
+        response = self.client.put(f'{self.route}{pk}/', data={}, format='json')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='change')
         response = self.client.put(f'{self.route}{pk}/', data={}, format='json')
         with self.subTest('Update must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -161,6 +228,23 @@ class AgentRouteCase(TestCase):
 
     def test_partial_update_agent(self):
         pk = len(self.agents_list) + 2
+
+        response = self.client.patch(f'{self.route}{pk}/', data={}, format='json')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='delete')
+        response = self.client.patch(f'{self.route}{pk}/', data={}, format='json')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='change')
         response = self.client.patch(f'{self.route}{pk}/', data={}, format='json')
         with self.subTest('Partial update must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -221,6 +305,23 @@ class AgentRouteCase(TestCase):
 
     def test_delete_agent(self):
         pk = len(self.agents_list) + 2
+
+        response = self.client.delete(f'{self.route}{pk}/')
+        with self.subTest('Must return Unauthorized', response=response):
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('authentication', body.get('detail').lower())
+
+        self.login(permission='add')
+        response = self.client.delete(f'{self.route}{pk}/')
+        with self.subTest('Must return Forbidden', response=response):
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            body = response.json()
+            self.assertIn('detail', body)
+            self.assertIn('permission', body.get('detail').lower())
+
+        self.login(permission='delete')
         response = self.client.delete(f'{self.route}{pk}/')
         with self.subTest('Delete must return not found', response=response):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
