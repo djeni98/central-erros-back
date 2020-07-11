@@ -16,7 +16,9 @@ router.register(r'permissions', views.PermissionAPIViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('login/', custom_token_obtain_pair),
-    path('refresh/', token_refresh),
-    path('register/', views.register, name='register')
+    path('login/', custom_token_obtain_pair, name='login'),
+    path('refresh/', token_refresh, name='refresh-token'),
+    path('register/', views.register, name='register'),
+    path('recover/', views.request_recover, name='request-recover'),
+    path('reset/', views.reset_password, name='reset-password')
 ]

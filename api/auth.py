@@ -1,7 +1,6 @@
-from rest_framework import permissions
-
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -22,8 +21,13 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 custom_token_obtain_pair = CustomTokenObtainPairView.as_view()
 
 
-class DjangoModelPermissions(permissions.DjangoModelPermissions):
-    def __init__(self, *args, **kwargs):
-        """Add 'view' permission in self.perms_map"""
-        self.perms_map['GET'] = ['%(app_label)s.view_%(model_name)s']
-        super().__init__(*args, **kwargs)
+class JWTAuthByQueryParams(JWTAuthentication):
+    def authenticate(self, request):
+        raw_token = request.query_params.get('token')
+        print(raw_token)
+
+        if raw_token is None:
+            return None
+
+        validated_token = self.get_validated_token(raw_token)
+        return self.get_user(validated_token), validated_token

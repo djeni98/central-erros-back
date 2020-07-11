@@ -1,3 +1,4 @@
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.contrib.auth.password_validation import validate_password
 
 from rest_framework import serializers
@@ -93,3 +94,13 @@ class EventModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
+
+
+class ResetPasswordFormSerializer(serializers.Serializer):
+    username = serializers.CharField(
+        max_length=150, validators=[UnicodeUsernameValidator()]
+    )
+    password = serializers.CharField(
+        validators=[validate_password],
+        style={'input_type': 'password'}
+    )
