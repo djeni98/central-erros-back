@@ -20,7 +20,7 @@ class BaseCase(TestCase, PermissionUtilities):
         #    item = Model.objects.create(name=f'item{i+1}')
         #    self.items_list.append(item)
 
-    def test_list_item(self)
+    def test_list_item(self):
         response = self.client.get(f'{self.route}')
         with self.subTest('Must return Unauthorized', response=response):
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

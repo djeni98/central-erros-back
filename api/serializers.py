@@ -96,6 +96,11 @@ class EventModelSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class RecoverFormSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    link = serializers.CharField(required=False)
+
+
 class ResetPasswordFormSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=150, validators=[UnicodeUsernameValidator()]

@@ -22,7 +22,8 @@ from logs.models import Permission, Group, User, Event, Agent
 from api.serializers import (
     PermissionModelSerializer, GroupModelSerializer,
     UserModelSerializer, EventModelSerializer, AgentModelSerializer,
-    UserCreateSerializer as RegisterSerializer, ResetPasswordFormSerializer
+    UserCreateSerializer as RegisterSerializer,
+    RecoverFormSerializer, ResetPasswordFormSerializer
 )
 
 from api.email_templates import subject, message, html_message
@@ -79,6 +80,9 @@ register = RegisterAPIView.as_view()
 def request_recover(request):
     email = request.data.get('email', '')
     base_link = request.data.get('link', reverse('reset-password', request=request))
+
+    serializer = RecoverFormSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
     unit_time = '1 dia'
 
