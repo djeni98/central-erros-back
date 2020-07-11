@@ -5,13 +5,14 @@ from rest_framework import serializers
 from logs.models import Permission, Group, User, Event, Agent
 
 class PermissionModelSerializer(serializers.ModelSerializer):
-    app_labeled_name = serializers.CharField(
-        read_only=True,
-        source='content_type.app_labeled_name'
-    )
+    permission = serializers.SerializerMethodField()
+
     class Meta:
         model = Permission
-        fields = '__all__'
+        exclude = ['content_type']
+
+    def get_permission(self, obj):
+        return f'{obj.content_type.app_labeled_name} | {obj.name}'
 
 
 class GroupModelSerializer(serializers.ModelSerializer):

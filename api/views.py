@@ -16,7 +16,7 @@ from api.serializers import (
 from api.serializers import UserCreateSerializer as RegisterSerializer
 
 
-class PermissionAPIViewSet(viewsets.ModelViewSet):
+class PermissionAPIViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
     authentication_classes = [JWTAuthentication]
 
@@ -30,6 +30,7 @@ class GroupAPIViewSet(viewsets.ModelViewSet):
 
     queryset = Group.objects.all()
     serializer_class = GroupModelSerializer
+
 
 class UserAPIViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
