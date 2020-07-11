@@ -58,7 +58,6 @@ class RecoverRouteCase(TestCase, PermissionUtilities):
             self.assertIn('not found', response.json().get('error').lower())
 
     def test_non_user_recover_form(self):
-        return
         response = self.client.post(self.route, data={}, format='json')
         with self.subTest('Email must be required', response=response):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -84,7 +83,6 @@ class RecoverRouteCase(TestCase, PermissionUtilities):
             self.assertEqual(len(mail.outbox), 0)
 
     def test_valid_recover(self):
-        return
         data = self.simple_valid_form
         response = self.client.post(self.route, data=data, format='json')
         with self.subTest('Must return success and link redirects to api', response=response):

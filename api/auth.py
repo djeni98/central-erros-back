@@ -24,7 +24,6 @@ custom_token_obtain_pair = CustomTokenObtainPairView.as_view()
 class JWTAuthByQueryParams(JWTAuthentication):
     def authenticate(self, request):
         raw_token = request.query_params.get('token')
-        print(raw_token)
 
         if raw_token is None:
             return None
