@@ -1,0 +1,15 @@
+language: python
+python:
+  - "3.6"
+
+stages:
+  - name: test
+
+install:
+  - pip install -r requirements.txt
+
+jobs:
+  include:
+    - stage: test
+      name: Run All Tests
+      script: python manage.py test
