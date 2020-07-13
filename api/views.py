@@ -12,6 +12,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import AccessToken
 
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
+
+from api.filters import EventFilterClass, EventSearchFilter
+
 # I had to override DjangoModelPermissions to apply view permissions
 from api.permissions import DjangoModelPermissions, TokenUserMatchesUsername
 
@@ -44,6 +49,9 @@ class GroupAPIViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupModelSerializer
 
+    filter_backends = [SearchFilter]
+    search_fields = ['name']
+
 
 class UserAPIViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
@@ -51,6 +59,10 @@ class UserAPIViewSet(viewsets.ModelViewSet):
 
     queryset = User.objects.all()
     serializer_class = UserModelSerializer
+
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['is_superuser', 'is_staff', 'is_active']
+    search_fields = ['username', 'email']
 
 
 class EventAPIViewSet(viewsets.ModelViewSet):
@@ -60,6 +72,16 @@ class EventAPIViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventModelSerializer
 
+    filter_backends = [
+        DjangoFilterBackend,
+        EventSearchFilter,
+        OrderingFilter
+    ]
+    filterset_class = EventFilterClass
+    search_fields = ['level', 'description', 'source']
+    ordering_fields = ['level', 'datetime']
+    ordering = ['-datetime']
+
 
 class AgentAPIViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
@@ -67,6 +89,10 @@ class AgentAPIViewSet(viewsets.ModelViewSet):
 
     queryset = Agent.objects.all()
     serializer_class = AgentModelSerializer
+
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['name', 'environment']
+    search_fields = ['name', 'environment']
 
 
 class RegisterAPIView(generics.CreateAPIView):

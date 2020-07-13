@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Terceiros
     'rest_framework',
+    'django_filters',
     # Meus apps
     'logs',
     'api'
@@ -129,12 +130,14 @@ STATIC_URL = '/static/'
 
 # Rest Framework authentication
 # https://www.django-rest-framework.org/api-guide/authentication/
+# https://www.django-rest-framework.org/api-guide/pagination/
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination'
 }
 
 # Simple JWT
