@@ -2,7 +2,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from datetime import datetime
+from django.utils import timezone
 
 from logs.models import User
 
@@ -25,7 +25,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         response = super().post(request, *args, **kwargs)
 
         user = User.objects.get(username=request.data.get('username'))
-        user.last_login = datetime.now()
+        user.last_login = timezone.now()
         user.save()
 
         return response

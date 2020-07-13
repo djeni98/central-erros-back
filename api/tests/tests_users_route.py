@@ -3,7 +3,7 @@ from api.tests.TestCase import TestCase, PermissionUtilities
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from datetime import datetime, timezone, timedelta
+from django.utils import timezone
 
 from logs.models import User, Permission
 
@@ -246,7 +246,7 @@ class UserRouteCase(TestCase, PermissionUtilities):
             self.assertSubstringIn('numeric', body.get('password'))
 
         data = dict(self.simple_valid_user)
-        data['last_login'] = datetime.now(timezone(timedelta(hours=-3)))
+        data['last_login'] = timezone.now()
         response = self.client.put(f'{self.route}{pk}/', data=data, format='json')
 
         with self.subTest('User must be updated and last_login must not change', response=response):
@@ -312,7 +312,7 @@ class UserRouteCase(TestCase, PermissionUtilities):
             self.assertSubstringIn('numeric', body.get('password'))
             self.assertSubstringIn('common', body.get('password'))
 
-        data = {'last_login': datetime.now(timezone(timedelta(hours=-3)))}
+        data = {'last_login': timezone.now()}
         response = self.client.patch(f'{self.route}{pk}/', data=data, format='json')
         with self.subTest('Last login must not been changed', response=response):
             self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -3,7 +3,7 @@ from api.tests.TestCase import TestCase, PermissionUtilities
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from datetime import datetime
+from django.utils import timezone
 
 from logs.models import User, Agent, Event
 
@@ -25,7 +25,7 @@ class EventRouteCase(TestCase, PermissionUtilities):
         'level': 'CRITICAL',
         'description': 'A simple valid description',
         'details': 'A simple valid detail',
-        'datetime': datetime.now(),
+        'datetime': timezone.now(),
         'archived': False
         # user declared in setUp()
         # agent declared in setUp()

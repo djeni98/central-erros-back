@@ -1,5 +1,5 @@
 from django.test import TestCase
-from datetime import datetime, timezone, timedelta
+from django.utils import timezone
 
 from logs.models import User, Agent, Event
 
@@ -33,7 +33,7 @@ class ModelsTestCase(TestCase):
         )
 
         # Events
-        now = datetime.now(timezone(timedelta(hours=-3)))
+        now = timezone.now()
         info = Event.objects.create(
             level='INFO', description='new user registered',
             datetime=now, details='new user abcd registered today',
