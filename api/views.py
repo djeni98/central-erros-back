@@ -1,7 +1,6 @@
-from rest_framework import viewsets, generics, status
+from rest_framework import viewsets, generics
 
 from rest_framework.response import Response
-from rest_framework.exceptions import ErrorDetail
 from rest_framework.decorators import (
     api_view, authentication_classes, permission_classes
 )
@@ -105,7 +104,9 @@ register = RegisterAPIView.as_view()
 @api_view(['POST'])
 def request_recover(request):
     email = request.data.get('email', '')
-    base_link = request.data.get('link', reverse('reset-password', request=request))
+    base_link = request.data.get(
+        'link', reverse('reset-password', request=request)
+    )
 
     serializer = RecoverFormSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

@@ -81,7 +81,7 @@ class RegisterRouteCase(TestCase):
 
             db_users = User.objects.count()
             self.assertEqual(2, db_users)
-        
+
     def test_permissions_must_not_be_registered(self):
         data = dict(self.full_valid_user)
         data['is_superuser'] = True

@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from logs.models import Permission, Group, User, Event, Agent
 
+
 class PermissionModelSerializer(serializers.ModelSerializer):
     permission = serializers.SerializerMethodField()
 
@@ -31,7 +32,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'username', 'email', 'password']
+        fields = [
+            'id', 'first_name', 'last_name', 'username', 'email', 'password'
+        ]
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
@@ -75,7 +78,6 @@ class UserModelSerializer(UserCreateSerializer):
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
-
 
         instance.save()
         return instance

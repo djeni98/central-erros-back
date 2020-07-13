@@ -3,8 +3,6 @@ from api.tests.TestCase import TestCase, PermissionUtilities
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from datetime import datetime, timezone, timedelta
-
 from logs.models import User, Agent
 
 class AgentRouteCase(TestCase, PermissionUtilities):

@@ -3,10 +3,10 @@ from django_filters import rest_framework as filters
 
 from logs.models import Event
 
-envs = [(e, e) for e in ['production', 'testing', 'development']]
+
 class EventFilterClass(filters.FilterSet):
     environment = filters.ChoiceFilter(
-        choices=envs,
+        choices=[(e, e) for e in ['production', 'testing', 'development']],
         label='Environment',
         field_name='agent__environment'
     )
@@ -14,6 +14,7 @@ class EventFilterClass(filters.FilterSet):
     class Meta:
         model = Event
         fields = ['environment', 'archived']
+
 
 class EventSearchFilter(SearchFilter):
     def get_search_fields(self, view, request):

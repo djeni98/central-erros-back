@@ -63,7 +63,7 @@ class EventRouteCase(TestCase, PermissionUtilities):
 
         event = Event.objects.create(level='ERROR', description='no user, no agent', details='details: no user, no agent')
         self.events_list.append(event)
-        
+
         self.full_valid_event['agent'] = agents_list[0].id
         self.full_valid_event['user'] = users_list[0].id
 
@@ -159,9 +159,9 @@ class EventRouteCase(TestCase, PermissionUtilities):
         with self.subTest('Event must be created with all fields', response=response):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             event = response.json()
-            
+
             check_fields = list(data.keys())
-            check_fields.remove('datetime') # Datetime in python doesn't have 'Z' at end
+            check_fields.remove('datetime')  # Datetime in python doesn't have 'Z' at end
             for field in check_fields:
                 self.assertEqual(data.get(field), event.get(field))
 
@@ -243,7 +243,7 @@ class EventRouteCase(TestCase, PermissionUtilities):
             self.assertSubstringIn('required', body.get('level'))
             self.assertSubstringIn('required', body.get('description'))
             self.assertSubstringIn('required', body.get('details'))
-        
+
         data = self.invalid_event
         response = self.client.put(f'{self.route}{pk}/', data=data, format='json')
         with self.subTest('Level, description and details must be valid', response=response):

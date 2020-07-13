@@ -96,7 +96,7 @@ class RecoverRouteCase(TestCase, PermissionUtilities):
             self.assertEqual(sended.subject, subject)
             self.assertIn(data.get('email'), sended.to)
             self.assertIn(data.get('email'), sended.body)
-            self.assertIn(reverse('reset-password'), sended.body) 
+            self.assertIn(reverse('reset-password'), sended.body)
 
         data = self.full_valid_form
         response = self.client.post(self.route, data=data, format='json')
@@ -111,4 +111,4 @@ class RecoverRouteCase(TestCase, PermissionUtilities):
             self.assertEqual(sended.subject, subject)
             self.assertIn(data.get('email'), sended.to)
             self.assertIn(data.get('email'), sended.body)
-            self.assertIn(data.get('link'), sended.body) 
+            self.assertIn(data.get('link'), sended.body)

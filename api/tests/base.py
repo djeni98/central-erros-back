@@ -85,7 +85,7 @@ class BaseCase(TestCase, PermissionUtilities):
             #expected_items = len(self.items_list) + 1
             #db_items = Model.objects.count()
             #self.assertEqual(expected_items, db_items)
-            
+
         data = self.full_valid_item
         response = self.client.post(f'{self.route}', data=data, format='json')
         with self.subTest('Model must be created with all fields', response=response):

@@ -17,7 +17,7 @@ class GroupRouteCase(TestCase, PermissionUtilities):
 
     full_valid_group = {
         'name': 'view all resources',
-        # permissions declared in setUp 
+        # permissions declared in setUp
     }
 
     route = '/api/groups/'
@@ -102,7 +102,7 @@ class GroupRouteCase(TestCase, PermissionUtilities):
             expected_groups = len(self.groups_list) + 1
             db_groups = Group.objects.count()
             self.assertEqual(expected_groups, db_groups)
-            
+
         data = self.full_valid_group
         response = self.client.post(f'{self.route}', data=data, format='json')
         with self.subTest('Group must be created with all fields', response=response):

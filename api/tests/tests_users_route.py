@@ -54,7 +54,7 @@ class UserRouteCase(TestCase, PermissionUtilities):
         self.permission_users = {}
         for i, permission in enumerate(['view', 'add', 'change', 'delete']):
             user = User.objects.get(username=f'user{i+1}')
-            codename = f'{permission}_{User._meta.model_name}' 
+            codename = f'{permission}_{User._meta.model_name}'
             user.user_permissions.set([Permission.objects.get(codename=codename)])
             self.permission_users[permission] = {
                 'username': user.username, 'password': 'mypassword'

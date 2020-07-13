@@ -30,6 +30,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         return response
 
+
 custom_token_obtain_pair = CustomTokenObtainPairView.as_view()
 
 

@@ -1,10 +1,7 @@
-from api.tests.TestCase import TestCase, PermissionUtilities
-
-from django.core import mail
+from api.tests.TestCase import TestCase
 
 from rest_framework import status
 from rest_framework.test import APIClient
-from rest_framework.reverse import reverse
 
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -28,7 +25,7 @@ class ResetRouteCase(TestCase):
         'username': 'valid',
         'password': 'MYPASSWORD_myp455w0rd'
     }
-    
+
     previous_password = 'previous_password'
 
     route = '/api/reset/'
