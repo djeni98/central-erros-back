@@ -29,7 +29,6 @@ $ source venv/bin/activate
 
 ### Configurando o sistema
 ```bash
-(venv) $ python manage.py makemigrations 
 (venv) $ python manage.py migrate
 (venv) $ python manage.py createsuperuser
 ```
@@ -38,3 +37,20 @@ $ source venv/bin/activate
 ```bash
 (venv) $ python manage.py runserver
 ```
+
+Pela configuração padrão, os endpoints são renderizados com [BrowsableAPIRenderer](https://www.django-rest-framework.org/api-guide/renderers/#browsableapirenderer) do rest\_framework.
+Para poder usar visualizar o funcionamento de produção é preciso exportar duas variáveis de ambiente e copiar arquivos estáticos para somente um lugar.
+
+```bash
+(venv) $ export DJANGO_SETTINGS_MODULE='centralErros.settings_prod'
+(venv) $ export DATABASE_URL='sqlite:///db.sqlite3'
+(venv) $ python manage.py collectstatic
+(venv) $ python manage.py runserver
+```
+
+## Deploy
+
+Para fazer o deploy da aplicação, foi utizado as seguintes plataformas:
+
+* [Travis CI](https://travis-ci.com/)
+* [Heroku](https://www.heroku.com/)

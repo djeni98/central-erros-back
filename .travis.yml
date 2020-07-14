@@ -1,15 +1,13 @@
 language: python
 python:
-  - "3.6"
-
-stages:
-  - name: test
-
+  - '3.6'
 install:
   - pip install -r requirements.txt
-
-jobs:
-  include:
-    - stage: test
-      name: Run All Tests
-      script: python manage.py test
+script: python manage.py test
+deploy:
+  provider: heroku
+  app: djeni98-central-de-erros
+  on: master
+  run: "python manage.py migrate"
+  api_key:
+    secure: snqIg3+qnYGdw6IobM7RxTiL8moIfs6snre/K29APwYhhkfOpD70QXQEeoZyhY7XhyRjzx7dWLCuP6BgXUbj3ts2Ih3uNNatOYw9HsT2mVeViPBXcSrvgaphOsJXAz+fNdlx9gWb9Jwbw/IqLnlDBfoOrUqjAAqye4p2X3atYhQ9Vfg2fRKIGvmDxeztCeetp8lpUy/bqWRyykDwqoLwEehB5oZFirQ6/wySeJ5LcWoq/mcCtgmbNuWYH8DzABGRA3WQoTIWXai8t860xZcQVvUQucWWpHU2EWp1k2qzJQFs7FTARW/gCtvBCfEAIkvmwfl0SGm1GfKXf85hD2uuUgzZu1vfXYsZgG+52s7IkD9+EDBYgGwJ9dwqk5A1DNSRjNZ6LDpawrlQ6QU/H58/SgSkwm/NcnysHfZVUWnKpQJwB2FWM4cjbyTlh2y4Pbel4g1cLaaTEOAmFXoJW+1SbMd4HskKKdEg9MgiigEEEMXfSmA0qrK1hi8TmuVEnUVKil1gWfjH14hhnFwOIJSrsts7bVCc7JDpQHr9CfkTkkIfFzsIHKF0nS6InkmDM4iaQVKVy+R3EoFpF+uXCId+MzHZ9rApnQry19cVdaOHIR7V5Ld4G8WQX7jGwf+st7gWToBga+C6/WW7OlN7zDhVVFOsySYLdNe9OvK23HFT7RI=
