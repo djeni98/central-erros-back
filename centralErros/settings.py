@@ -16,7 +16,9 @@ from datetime import timedelta
 try:
     from centralErros.secret import SECRET_KEY
 except:
-    SECRET_KEY = ''
+    SECRET_KEY = os.environ.get(
+        'SECRET_KEY', 'f87rno8jei%yk6ar6n5jzpb%yl^!+u%7vm406)#2h+2881^fg#'
+    )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
