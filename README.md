@@ -10,6 +10,7 @@ Para seguir a especificação do [desafio](desafio.md), foram escolhidas algumas
 
 * [Django](https://www.djangoproject.com/) ```3.0.7```
 * [Django Rest Framework](https://www.django-rest-framework.org/) ```3.11.0```
+* [Swagger](https://swagger.io/) ```2.0```
 
 ## Instalação
 
@@ -48,9 +49,15 @@ Para poder usar visualizar o funcionamento de produção é preciso exportar dua
 (venv) $ python manage.py runserver
 ```
 
+## Endpoints
+
+Os endpoints estão especificados no arquivo [swagger.yaml](api/static/swagger.yaml). Para visualizar a página da especificação, execute a aplicação e acesse o endereço `http://127.0.0.1:8000/api/docs/`.
+
 ## Deploy
 
-Para fazer o deploy da aplicação, foi utizado as seguintes plataformas:
+[![Build Status](https://travis-ci.com/djeni98/central-erros-back.svg?branch=master)](https://travis-ci.com/djeni98/central-erros-back)
+
+Para fazer o deploy da [aplicação](https://djeni98-central-de-erros.herokuapp.com/api/), foi utizado as seguintes plataformas:
 
 * [Travis CI](https://travis-ci.com/)
 * [Heroku](https://www.heroku.com/)

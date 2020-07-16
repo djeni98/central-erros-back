@@ -23,9 +23,25 @@ tags:
   description: "Gerenciamento de eventos (Logs)"
 schemes:
 - "https"
+
+securityDefinitions:
+  jwt:
+    type: "apiKey"
+    name: "Authorization"
+    in: "header"
+  jwt-query:
+    type: "apiKey"
+    name: "token"
+    in: "query"
+    description: "Disponível somente para rota /api/reset/"
+
+security:
+- jwt: []
+
 paths:
   /login/:
     post:
+      security: []
       summary: "Realiza login por username e password"
       description: "Realiza login e retorna 2 JWTs. Um para realizar a autenticação e autorização; e outro para renovar o token de acesso expirado"
       tags:
@@ -59,6 +75,7 @@ paths:
 
   /refresh/:
     post:
+      security: []
       summary: "Renova token de acesso"
       description: "Recebe o token de renovação e retorna um novo token de acesso"
       tags:
@@ -87,6 +104,7 @@ paths:
 
   /recover/:
     post:
+      security: []
       summary: "Envia email para realizar troca de senha"
       description:
         Envia uma mensagem para _email_ com um endereço para realizar a troca de senha.
@@ -141,12 +159,10 @@ paths:
         A autenticação é feita pelo header ou por query param. Caso o username fornecido no corpo não for compatível com o token, a permissão será negada.
       tags:
       - "password"
+      security:
+      - jwt: []
+      - jwt-query: []
       parameters:
-      - name: token
-        in: query
-        description: Token para autenticação
-        required: false
-        type: string
       - name: body
         in: body
         description: Username e nova senha
