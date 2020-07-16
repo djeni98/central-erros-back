@@ -1,0 +1,1100 @@
+swagger: "2.0"
+info:
+  description: "API para a Central de Erros, [desafio](https://github.com/djeni98/central-erros-back/blob/master/desafio.md) do AceleraDev Python Online da CodeNation"
+  version: "1.0.0"
+  title: "Central de Erros"
+host: "djeni98-central-de-erros.herokuapp.com"
+basePath: "/api/"
+
+tags:
+- name: "auth"
+  description: "Autenticação e Autorização"
+- name: "users"
+  description: "Gerenciamento de usuários"
+- name: "password"
+  description: "Gerenciamento de troca de senha"
+- name: "permissions"
+  description: "Listagem de permissões [ReadOnly]"
+- name: "groups"
+  description: "Gerenciamento de grupos"
+- name: "agents"
+  description: "Gerenciamento de agentes (Dispositivos)"
+- name: "events"
+  description: "Gerenciamento de eventos (Logs)"
+schemes:
+- "https"
+paths:
+  /login/:
+    post:
+      summary: "Realiza login por username e password"
+      description: "Realiza login e retorna 2 JWTs. Um para realizar a autenticação e autorização; e outro para renovar o token de acesso expirado"
+      tags:
+      - "auth"
+      parameters:
+      - name: credentials
+        in: body
+        description: Credencial a ser validada
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            password:
+              type: string
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: O token de acesso serve para autenticação. O token de renovação serve para trocar o token de acesso expirado.
+          schema:
+            type: object
+            properties:
+              access:
+                type: string
+                description: O tempo de vida do token de acesso é de 1 dia.
+              refresh:
+                type: string
+                description: O tempo de vida do token de renovação é de 2 dias.
+
+  /refresh/:
+    post:
+      summary: "Renova token de acesso"
+      description: "Recebe o token de renovação e retorna um novo token de acesso"
+      tags:
+      - "auth"
+      parameters:
+      - name: body
+        in: body
+        description: Token de renovação
+        required: true
+        schema:
+          type: object
+          properties:
+            refresh:
+              type: string
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: Retorna um token de acesso
+          schema:
+            type: object
+            properties:
+              access:
+                type: string
+                description: O tempo de vida do token de acesso é de 1 dia.
+
+  /recover/:
+    post:
+      summary: "Envia email para realizar troca de senha"
+      description:
+        Envia uma mensagem para _email_ com um endereço para realizar a troca de senha.
+        Esse endereço receberá o token do usuário por query param.
+
+
+        **Exemplo:**
+        
+        
+        **POST** /recover/
+        
+        _BODY_ {"email":"user@email.com", "link":"domain.com/reset-password"}
+
+
+        Para:"user@email.com"
+
+        Mensagem:"[...] acesse o link abaixo para trocar sua senha
+
+        <a href='**domain.com/reset-password?token={tokenuser}**'\>link</a\>"
+      tags:
+      - "password"
+      parameters:
+      - name: body
+        in: body
+        description: Email do usuário e link de redirecionamento
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+            link:
+              type: string
+              example: http://domain.com/reset-password
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: Operação bem sucedida
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: Email will be sent if it is a valid user.
+
+  /reset/:
+    post:
+      summary: "Troca a senha do usuário"
+      description:
+        A autenticação é feita pelo header ou por query param. Caso o username fornecido no corpo não for compatível com o token, a permissão será negada.
+      tags:
+      - "password"
+      parameters:
+      - name: token
+        in: query
+        description: Token para autenticação
+        required: false
+        type: string
+      - name: body
+        in: body
+        description: Username e nova senha
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            password:
+              type: string
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: Operação bem sucedida
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: Your password has been changed.
+
+  /users/:
+    get:
+      summary: "Lista usuários"
+      tags:
+      - "users"
+      operationId: "listUsers"
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Número de resultados por página.
+        type: integer
+      - name: offset
+        required: false
+        in: query
+        description: O índice inicial para o retorno dos resultados.
+        type: integer
+      - name: is_superuser
+        required: false
+        in: query
+        description: Filtra por superusuários ou não superusuários
+        type: boolean
+      - name: is_staff
+        required: false
+        in: query
+        description: Filtra por usuários com ou sem permissão ao portal admin
+        type: boolean
+      - name: is_active
+        required: false
+        in: query
+        description: Filtra por usuários ativos ou inativos
+        type: boolean
+      - name: search
+        required: false
+        in: query
+        description: Busca por username ou email
+        type: string
+      responses:
+       "200":
+          description:
+            Retorna os usuários aplicandos os filtros especificados no modelo abaixo.
+            Caso não haja query_params, o retorno será uma lista de Usuários; User[]
+          schema:
+            type: object
+            properties:
+              count:
+                type: integer
+                example: 30
+              next:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=20"
+              previous:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=0"
+              results:
+                type: array
+                items: &user_response
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      readOnly: true
+                    username:
+                      type: string
+                      maxLength: 150
+                      pattern: ^[\w.@+-_]+
+                    email:
+                      type: string
+                      format: email
+                    first_name:
+                      type: string
+                      maxLength: 30
+                    last_name:
+                      type: string
+                      maxLength: 150
+                    last_login:
+                      type: string
+                      format: date-time
+                      readOnly: true
+                    is_superuser:
+                      type: boolean
+                      description: Aplica todas as permissões sem declará-las explicitamente.
+                    is_staff:
+                      type: boolean
+                      description: Indica se o usuário tem permissão de logar no admin
+                    is_active:
+                      type: boolean
+                      description: Indica se o usuário está ativo.
+                        Usar esta variável ao invés de deletar contas.
+                    date_joined:
+                      type: string
+                      format: date-time
+                    groups:
+                      type: array
+                      items:
+                        type: integer
+                      description: Os grupos ao qual este usuário pertence.
+                        O usuário receberá todas as permissões de cada grupo que pertence.
+                    user_permissions:
+                      type: array
+                      items:
+                        type: integer
+                      description: Permissões específicas para este usuário.
+    post:
+      summary: "Cria usuário"
+      tags:
+      - "users"
+      operationId: "createUser"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Usuário a ser criado"
+        required: true
+        schema:
+          $ref: "#/definitions/User"
+      responses:
+        '201':
+          description: Retorna os dados do usuário criado exceto a senha.
+          schema: *user_response
+
+  /users/{id}/:
+    get:
+      tags:
+      - "users"
+      summary: "Detalha usuário por id"
+      operationId: "getUserById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: path
+        description: "O id do usuário a ser detalhado"
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Retorna todas as informações do usuário, exceto senha.
+          schema: *user_response
+    put:
+      tags:
+      - "users"
+      summary: "Atualiza usuário por id"
+      description: "Todas as informações são sobrescritas."
+      operationId: "updateUser"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do usuário que será atualizado"
+        required: true
+        type: integer
+      - in: "body"
+        name: "body"
+        description: "Dados para atualizar usuário"
+        required: true
+        schema:
+          $ref: "#/definitions/User"
+      responses:
+        "200":
+          description: Retorna todas as informações do usuário, exceto senha.
+          schema: *user_response
+    patch:
+      tags:
+      - "users"
+      summary: "Atualiza parcialmente o usuário por id"
+      description: "Somente as informações providas serão atualizadas."
+      operationId: "partial_updateUser"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do usuário que será parcialmente atualizado"
+        required: true
+        type: integer
+      - in: "body"
+        name: "body"
+        description:
+          Dados para atualizar usuário, qualquer campo do modelo poderá ser atualizado.
+        required: true
+        schema:
+          type: object
+          example:
+            password: new_password
+      responses:
+        "200":
+          description: Retorna todas as informações do usuário, exceto senha.
+          schema: *user_response
+    delete:
+      tags:
+      - "users"
+      summary: "Deleta usuário por id"
+      description: "É preferível desativar o usuário ao invés de deletá-lo."
+      operationId: "deleteUser"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do usuário que será removido"
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Remoção realizada com sucesso
+
+  /permissions/:
+    get:
+      summary: "Lista permissões"
+      tags:
+      - "permissions"
+      operationId: "listPermissions"
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Número de resultados por página.
+        type: integer
+      - name: offset
+        required: false
+        in: query
+        description: O índice inicial para o retorno dos resultados.
+        type: integer
+      responses:
+       "200":
+          description:
+            Retorna as permissões aplicandos os filtros especificados no modelo abaixo.
+            Caso não haja query_params, o retorno será uma lista de Permissões; Permission[]
+          schema:
+            type: object
+            properties:
+              count:
+                type: integer
+                example: 30
+              next:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=20"
+              previous:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=0"
+              results:
+                type: array
+                items:
+                  $ref: "#/definitions/Permission"
+
+  /permissions/{id}/:
+    get:
+      tags:
+      - "permissions"
+      summary: "Detalha permissão por id"
+      operationId: "getPermissionById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: path
+        description: "O id da permissão a ser detalhado"
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: "Detalha permissão"
+          schema:
+            $ref: "#/definitions/Permission"
+
+  /groups/:
+    get:
+      summary: "Lista grupos"
+      tags:
+      - "groups"
+      operationId: "listGroups"
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Número de resultados por página.
+        type: integer
+      - name: offset
+        required: false
+        in: query
+        description: O índice inicial para o retorno dos resultados.
+        type: integer
+      - name: search
+        required: false
+        in: query
+        description: Busca por nome do grupo
+        type: string
+      responses:
+       "200":
+          description:
+            Retorna os grupos aplicandos os filtros especificados no modelo abaixo.
+            Caso não haja query_params, o retorno será uma lista de Grupos; Group[]
+          schema:
+            type: object
+            properties:
+              count:
+                type: integer
+                example: 30
+              next:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=20"
+              previous:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=0"
+              results:
+                type: array
+                items: 
+                  $ref: '#/definitions/Group'
+    post:
+      summary: "Cria grupo"
+      tags:
+      - "groups"
+      operationId: "createGroup"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Grupo a ser criado"
+        required: true
+        schema:
+          $ref: "#/definitions/Group"
+      responses:
+        '201':
+          description: Retorna o grupo criado.
+          schema:
+            $ref: "#/definitions/Group"
+
+  /groups/{id}/:
+    get:
+      tags:
+      - "groups"
+      summary: "Detalha grupo por id"
+      operationId: "getGroupById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: path
+        description: "O id do grupo a ser detalhado"
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Retorna todas as informações do grupo.
+          schema:
+            $ref: "#/definitions/Group"
+    put:
+      tags:
+      - "groups"
+      summary: "Atualiza grupo por id"
+      description: "Todas as informações são sobrescritas."
+      operationId: "updateGroup"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do grupo que será atualizado"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "Dados para atualizar o grupo"
+        required: true
+        schema:
+          $ref: "#/definitions/Group"
+      responses:
+        "200":
+          description: Retorna todas as informações do grupo.
+          schema:
+            $ref: "#/definitions/Group"
+    patch:
+      tags:
+      - "groups"
+      summary: "Atualiza parcialmente o grupo por id"
+      description: "Somente as informações providas serão atualizadas."
+      operationId: "partial_updateGroup"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do grupo que será parcialmente atualizado"
+        required: true
+        type: integer
+      - in: "body"
+        name: "body"
+        description:
+          Dados para atualizar grupo, qualquer campo do modelo poderá ser atualizado.
+        required: true
+        schema:
+          type: object
+          example:
+            permissions: [1, 3, 5]
+      responses:
+        "200":
+          description: Retorna todas as informações do grupo atualizadas.
+          schema:
+            $ref: "#/definitions/Group"
+    delete:
+      tags:
+      - "groups"
+      summary: "Deleta grupo por id"
+      operationId: "deleteGroup"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do grupo que será removido"
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Remoção realizada com sucesso
+
+  /agents/:
+    get:
+      summary: "Lista agentes"
+      tags:
+      - "agents"
+      operationId: "listAgents"
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Número de resultados por página.
+        type: integer
+      - name: offset
+        required: false
+        in: query
+        description: O índice inicial para o retorno dos resultados.
+        type: integer
+      - name: name
+        required: false
+        in: query
+        description: Filtra por nome do agente.
+        type: string
+      - name: environment
+        required: false
+        in: query
+        description: Filtra por ambiente do agente.
+        type: string
+        enum:
+        - development
+        - testing
+        - production
+      - name: search
+        required: false
+        in: query
+        description: Busca por nome ou ambiente do agente
+        type: string
+      responses:
+       "200":
+          description:
+            Retorna os agentes aplicandos os filtros especificados no modelo abaixo.
+            Caso não haja query_params, o retorno será uma lista de Agentes; Agent[]
+          schema:
+            type: object
+            properties:
+              count:
+                type: integer
+                example: 30
+              next:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=20"
+              previous:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=0"
+              results:
+                type: array
+                items: 
+                  $ref: '#/definitions/Agent'
+    post:
+      summary: "Cria agente"
+      tags:
+      - "agents"
+      operationId: "createAgent"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Agente a ser criado"
+        required: true
+        schema:
+          $ref: "#/definitions/Agent"
+      responses:
+        '201':
+          description: Retorna o agente criado.
+          schema:
+            $ref: "#/definitions/Agent"
+
+  /agents/{id}/:
+    get:
+      tags:
+      - "agents"
+      summary: "Detalha agente por id"
+      operationId: "getAgentById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: path
+        description: "O id do agente a ser detalhado"
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Retorna todas as informações do agente.
+          schema:
+            $ref: "#/definitions/Agent"
+    put:
+      tags:
+      - "agents"
+      summary: "Atualiza agente por id"
+      description: "Todas as informações são sobrescritas."
+      operationId: "updateAgent"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do agente que será atualizado"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "Dados para atualizar o agente"
+        required: true
+        schema:
+          $ref: "#/definitions/Agent"
+      responses:
+        "200":
+          description: Retorna todas as informações do agente.
+          schema:
+            $ref: "#/definitions/Agent"
+    patch:
+      tags:
+      - "agents"
+      summary: "Atualiza parcialmente o agente por id"
+      description: "Somente as informações providas serão atualizadas."
+      operationId: "partial_updateAgent"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do agente que será parcialmente atualizado"
+        required: true
+        type: integer
+      - in: "body"
+        name: "body"
+        description:
+          Dados para atualizar agente, qualquer campo do modelo poderá ser atualizado.
+        required: true
+        schema:
+          type: object
+          example:
+            name: "string"
+      responses:
+        "200":
+          description: Retorna todas as informações do agente atualizadas.
+          schema:
+            $ref: "#/definitions/Agent"
+    delete:
+      tags:
+      - "agents"
+      summary: "Deleta agente por id"
+      operationId: "deleteAgent"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do agente que será removido"
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Remoção realizada com sucesso
+
+
+  /events/:
+    get:
+      summary: "Lista eventos"
+      tags:
+      - "events"
+      operationId: "listEvents"
+      parameters:
+      # Paginação
+      - name: limit
+        required: false
+        in: query
+        description: Número de resultados por página.
+        type: integer
+      - name: offset
+        required: false
+        in: query
+        description: O índice inicial para o retorno dos resultados.
+        type: integer
+      # Filtros
+      - name: environment
+        required: false
+        in: query
+        description: Filtra por ambiente.
+        type: string
+        enum:
+        - development
+        - testing
+        - production
+      - name: archived
+        required: false
+        in: query
+        description: Filtra por eventos ativos ou arquivados.
+        type: boolean
+      # Ordenação
+      - name: ordering
+        required: false
+        in: query
+        description: Especifica como ordenar os resultados.
+        type: string
+        enum:
+        - datetime
+        - -datetime
+        - level
+        - -level
+      # Busca
+      - name: search_by
+        required: false
+        in: query
+        description: Especifica qual campo a busca será aplicada.
+        type: string
+        enum:
+        - level
+        - description
+        - source
+      - name: search
+        required: false
+        in: query
+        description: Busca por nome do evento
+        type: string
+      responses:
+       "200":
+          description:
+            Retorna os eventos aplicandos os filtros especificados no modelo abaixo.
+            Caso não haja query_params, o retorno será uma lista de Eventos; Event[]
+          schema:
+            type: object
+            properties:
+              count:
+                type: integer
+                example: 30
+              next:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=20"
+              previous:
+                type: string
+                example: "https://domain.com/api/users/?limit=10&offset=0"
+              results:
+                type: array
+                items: 
+                  $ref: '#/definitions/Event'
+    post:
+      summary: "Cria evento"
+      tags:
+      - "events" #BlackLivesMatter 
+      operationId: "createEvent"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Evento a ser criado"
+        required: true
+        schema:
+          $ref: "#/definitions/Event"
+      responses:
+        '201':
+          description: Retorna o evento criado.
+          schema:
+            $ref: "#/definitions/Event"
+
+  /events/{id}/:
+    get:
+      tags:
+      - "events"
+      summary: "Detalha evento por id"
+      operationId: "getEventById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: path
+        description: "O id do evento a ser detalhado"
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Retorna todas as informações do evento.
+          schema:
+            $ref: "#/definitions/Event"
+    put:
+      tags:
+      - "events"
+      summary: "Atualiza evento por id"
+      description: "Todas as informações são sobrescritas."
+      operationId: "updateEvent"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do evento que será atualizado"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "Dados para atualizar o evento"
+        required: true
+        schema:
+          $ref: "#/definitions/Event"
+      responses:
+        "200":
+          description: Retorna todas as informações do evento.
+          schema:
+            $ref: "#/definitions/Event"
+    patch:
+      tags:
+      - "events"
+      summary: "Atualiza parcialmente o evento por id"
+      description: "Somente as informações providas serão atualizadas."
+      operationId: "partial_updateEvent"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do evento que será parcialmente atualizado"
+        required: true
+        type: integer
+      - in: "body"
+        name: "body"
+        description:
+          Dados para atualizar evento, qualquer campo do modelo poderá ser atualizado.
+        required: true
+        schema:
+          type: object
+          example:
+            permissions: [1, 3, 5]
+      responses:
+        "200":
+          description: Retorna todas as informações do evento atualizadas.
+          schema:
+            $ref: "#/definitions/Event"
+    delete:
+      tags:
+      - "events"
+      summary: "Deleta evento por id"
+      operationId: "deleteEvent"
+      produces:
+      - "application/json"
+      parameters:
+      - name: id
+        in: "path"
+        description: "id do evento que será removido"
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Remoção realizada com sucesso
+
+
+definitions:
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      username:
+        type: string
+        maxLength: 150
+        pattern: ^[\w.@+-_]+
+      email:
+        type: string
+        format: email
+      password:
+        type: string
+        format: password
+      first_name:
+        type: string
+        maxLength: 30
+      last_name:
+        type: string
+        maxLength: 150
+      last_login:
+        type: string
+        format: date-time
+        readOnly: true
+      is_superuser:
+        type: boolean
+        description: Aplica todas as permissões sem declará-las explicitamente.
+      is_staff:
+        type: boolean
+        description: Indica se o usuário tem permissão de logar no admin
+      is_active:
+        type: boolean
+        description: Indica se o usuário está ativo.
+          Usar esta variável ao invés de deletar contas.
+      date_joined:
+        type: string
+        format: date-time
+      groups:
+        type: array
+        items:
+          type: integer
+        description: Os grupos ao qual este usuário pertence.
+          O usuário receberá todas as permissões de cada grupo que pertence.
+      user_permissions:
+        type: array
+        items:
+          type: integer
+        description: Permissões específicas para este usuário.
+    required:
+    - username
+    - email
+    - password
+
+  Group:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      name:
+        type: string
+        maxLength: 150
+      permissions:
+        type: array
+        items:
+          type: integer
+    required:
+    - name
+  
+  Permission:
+    type: object
+    properties:
+      id:
+        type: integer
+      permission:
+        type: string
+        example: "auth | user | Can view user"
+      name:
+        type: string
+        maxLength: 255
+        example: "Can view user"
+      codename:
+        type: string
+        maxLength: 100
+        example: "view_user"
+
+  Agent:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      environment:
+        type: string
+        enum:
+        - development
+        - testing
+        - production
+      name:
+        type: string
+        maxLength: 256
+      address:
+        type: string
+      user:
+        type: integer
+    required:
+    - environment
+    - name
+
+  Event:
+    type: object
+    properties:
+      id:
+        type: integer
+        readOnly: true
+      level:
+        type: string
+        enum:
+        - CRITICAL
+        - DEBUG
+        - ERROR
+        - WARNING
+        - INFO
+      description:
+        type: string
+      details:
+        type: string
+      datetime:
+        type: string
+        format: date-time
+      archived:
+        type: boolean
+      agent:
+        type: integer
+      user:
+        type: integer
+      source:
+        type: string
+        description: Nome do agente
+        readOnly: true
+      collected_by:
+        type: string
+        description: Username do usuário
+        readOnly: true
+    required:
+    - level
+    - description
+    - details

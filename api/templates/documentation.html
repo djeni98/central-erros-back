@@ -1,0 +1,24 @@
+{% load static %}
+<html>
+  <head>
+    <title>Central de Erros - Documentação</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css" />
+    <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script>
+    const ui = SwaggerUIBundle({
+        url: "{% static 'swagger.yaml' %}",
+        dom_id: '#swagger-ui',
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIBundle.SwaggerUIStandalonePreset
+        ],
+        layout: "BaseLayout"
+      })
+    </script>
+  </body>
+</html>

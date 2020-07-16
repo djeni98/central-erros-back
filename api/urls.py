@@ -1,4 +1,5 @@
 from django.urls import include, path
+from django.views.generic import TemplateView
 
 from rest_framework import routers
 
@@ -16,6 +17,11 @@ router.register(r'permissions', views.PermissionAPIViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+
+    path('docs/', TemplateView.as_view(
+        template_name='documentation.html'
+    ), name='swagger-ui'),
+
     path('login/', custom_token_obtain_pair, name='login'),
     path('refresh/', token_refresh, name='refresh-token'),
     path('register/', views.register, name='register'),
